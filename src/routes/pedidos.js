@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('../databases/connection').pool;
+const login = require('../middleware/login');
 
-router.get('/', (request, response, next) => {
+router.get('/', login, (request, response, next) => {
 
     mysql.getConnection((error, conn) => {
         if(error){
@@ -36,7 +37,7 @@ router.get('/', (request, response, next) => {
     });
 });
 
-router.get('/:id_request', (request, response, next) => {
+router.get('/:id_request', login, (request, response, next) => {
 
     const id_request = request.params.id_request;
 
@@ -89,7 +90,7 @@ router.get('/:id_request', (request, response, next) => {
     });
 });
 
-router.post('/', (request, response, next) => {
+router.post('/', login, (request, response, next) => {
 
     const { amount, id_product } = request.body;
 
@@ -147,7 +148,7 @@ router.post('/', (request, response, next) => {
     });
 });
 
-router.put('/', (request, response, next) => {
+router.put('/', login, (request, response, next) => {
 
     const {id_request, amount, id_product} = request.body;
 
@@ -181,7 +182,7 @@ router.put('/', (request, response, next) => {
     });
 });
 
-router.delete('/', (request, response, next) => {
+router.delete('/', login, (request, response, next) => {
 
     const {id_request} = request.body;
     

@@ -3,6 +3,7 @@ const router = express.Router();
 const mysql = require('../databases/connection').pool;
 const multer = require('multer');
 const multerConfig = require('../config/multer');
+const login = require('../middleware/login');
 
 router.get('/', (request, response, next) => {
 
@@ -92,7 +93,7 @@ router.get('/:id_product', (request, response, next) => {
     });
 });
 
-router.post('/', multer(multerConfig).single('photo'), (request, response, next) => {
+router.post('/', login, multer(multerConfig).single('photo'), (request, response, next) => {
 
     const {product, value} = request.body;
     const img = "http://localhost:3000/uploads/" + request.file.filename;
@@ -136,7 +137,7 @@ router.post('/', multer(multerConfig).single('photo'), (request, response, next)
     });
 });
 
-router.put('/', multer(multerConfig).single('photo'),(request, response, next) => {
+router.put('/', login, multer(multerConfig).single('photo'),(request, response, next) => {
 
     const {id_product, product, value} = request.body;
     const img = "http://localhost:3000/uploads/" + request.file.filename;
@@ -181,7 +182,7 @@ router.put('/', multer(multerConfig).single('photo'),(request, response, next) =
     });
 });
 
-router.delete('/', (request, response, next) => {
+router.delete('/', login, (request, response, next) => {
     const {id_product} = request.body;
 
     mysql.getConnection((error, conn) => {
@@ -191,25 +192,40 @@ router.delete('/', (request, response, next) => {
             });
         }
         conn.query(
-            'DELETE FROM tb_products WHERE id_product = ?',
+            'SELECT * FROM tb_products WHERE id_product = ?',
             [id_product],
             (error, result, field) => {
-                conn.release();
-
                 if(error){
-                    return response.status(500).send({
-                        error: error,
-                        response: null
-                    });
+                    conn.release();
+                    return response.status(500).send({error: error})
                 }
-
-                const json = {
-                    message: 'Produto removido',
+                if(result.length == 0){
+                    conn.release();
+                    return response.status(404).send({message: 'Produto não encontrado'})
+                }else{
+                    conn.query(
+                        'DELETE FROM tb_products WHERE id_product = ?',
+                        [id_product],
+                        (error, result, field) => {
+                            conn.release();
+            
+                            if(error){
+                                return response.status(500).send({
+                                    error: error,
+                                    response: null
+                                });
+                            }
+            
+                            const json = {
+                                message: 'Produto removido',
+                            }
+            
+                            response.status(202).send(json);
+                        }
+                    );
                 }
-
-                response.status(202).send(json);
             }
-        )
+        );
     });
 });
 
